@@ -1,0 +1,11 @@
+{
+  "nome": "Meu sistema",
+  "descricao": "Sistema para gestão de versões",
+  "versoes": [
+    {
+      "numeroVersao": "1.0.0",
+      "dataRelease": "2026-10-17T00:00:00",
+      "depreciado": false
+    }
+  ]
+}
