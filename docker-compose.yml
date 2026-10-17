@@ -19,6 +19,17 @@ services:
       sqlserver:
         condition: service_healthy
     command: dotnet watch run --project src/MeuProjeto.API/MeuProjeto.API.csproj --urls http://+:8080
+  
+  
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    depends_on:
+      - backend
+
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest

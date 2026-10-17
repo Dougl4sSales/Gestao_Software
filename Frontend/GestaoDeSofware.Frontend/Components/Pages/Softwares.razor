@@ -1,0 +1,234 @@
+
+@page "/"
+@page "/softwares"
+
+@using System.Linq
+@using GestaoDeSofware.Frontend.DTOs
+@using GestaoDeSofware.Frontend.Services
+@inject SoftwareApiService SoftwareApi
+
+<PageTitle>Gestão de Software</PageTitle>
+
+<div class="software-page">
+    <header class="page-header">
+        <div>
+            <span class="eyebrow">ADMINISTRAÇÃO</span>
+            <h1>Gestão de Software</h1>
+            <p>Gerencie os softwares cadastrados e acompanhe suas versões.</p>
+        </div>
+    </header>
+
+    <section class="stats-grid">
+        <div class="stat-card">
+            <span>Softwares cadastrados</span>
+            <strong>@ListaSoftwares.Count</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Total de versões</span>
+            <strong>@TotalVersoes</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Versões depreciadas</span>
+            <strong>@TotalDepreciadas</strong>
+        </div>
+    </section>
+
+    <section class="content-card">
+        <div class="toolbar">
+            <div>
+                <h2>Softwares e versões</h2>
+                <p>Consulte as versões e suas datas de release.</p>
+            </div>
+
+            <input
+                class="search-input"
+                type="search"
+                placeholder="Buscar software ou versão..."
+                @bind="Busca"
+                @bind:event="oninput"
+                aria-label="Buscar software ou versão" />
+        </div>
+
+        @if (Carregando)
+        {
+            <div class="feedback">
+                Carregando softwares...
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(Erro))
+        {
+            <div class="error-message">
+                <p>@Erro</p>
+
+                <button
+                    type="button"
+                    class="retry-button"
+                    @onclick="CarregarAsync">
+                    Tentar novamente
+                </button>
+            </div>
+        }
+        else if (!SoftwaresFiltrados.Any())
+        {
+            <div class="feedback">
+                @if (ListaSoftwares.Count == 0)
+                {
+                    <p>Nenhum software cadastrado.</p>
+                }
+                else
+                {
+                    <p>Nenhum software encontrado para a pesquisa.</p>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="table-container">
+                <table class="software-table">
+                    <thead>
+                        <tr>
+                            <th>Software</th>
+                            <th>Versão</th>
+                            <th>Data de release</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var software in SoftwaresFiltrados)
+                        {
+                            var versoes = VersoesFiltradas(software).ToList();
+
+                            @foreach (var versao in versoes)
+                            {
+                                <tr @key="versao.Id">
+                                    <td>
+                                        <div class="software-name">
+                                            <span class="software-icon">
+                                                <i class="bi bi-box-seam"></i>
+                                            </span>
+
+                                            <div>
+                                                <strong>@software.Nome</strong>
+
+                                                @if (!string.IsNullOrWhiteSpace(software.Descricao))
+                                                {
+                                                    <small>@software.Descricao</small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <span class="version-number">
+                                            @versao.NumeroVersao
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        @versao.DataRelease.ToString("dd/MM/yyyy")
+                                    </td>
+
+                                    <td>
+                                        <span class="status-badge @(versao.Depreciado ? "deprecated" : "active")">
+                                            @(versao.Depreciado ? "Depreciada" : "Ativa")
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-footer">
+                Exibindo @TotalLinhasExibidas
+                @(TotalLinhasExibidas == 1 ? "versão" : "versões")
+                de @TotalVersoes versões cadastradas.
+            </div>
+        }
+    </section>
+</div>
+
+@code {
+    private List<SoftwareDto> ListaSoftwares = new();
+
+    private string Busca = string.Empty;
+    private bool Carregando = true;
+    private string? Erro;
+
+    private int TotalVersoes =>
+        ListaSoftwares.Sum(s => s.Versoes?.Count ?? 0);
+
+    private int TotalDepreciadas =>
+        ListaSoftwares.Sum(s =>
+            s.Versoes?.Count(v => v.Depreciado) ?? 0);
+
+    private int TotalLinhasExibidas =>
+        SoftwaresFiltrados.Sum(s => VersoesFiltradas(s).Count());
+
+    private IEnumerable<SoftwareDto> SoftwaresFiltrados =>
+        ListaSoftwares.Where(s =>
+            Contem(s.Nome, Busca)
+            || Contem(s.Descricao, Busca)
+            || (s.Versoes?.Any(v =>
+                Contem(v.NumeroVersao, Busca)) ?? false));
+
+    private IEnumerable<VersaoSoftwareDto> VersoesFiltradas(
+        SoftwareDto software)
+    {
+        var versoes = software.Versoes
+            ?? new List<VersaoSoftwareDto>();
+
+        if (string.IsNullOrWhiteSpace(Busca)
+            || Contem(software.Nome, Busca)
+            || Contem(software.Descricao, Busca))
+        {
+            return versoes.OrderByDescending(v => v.DataRelease);
+        }
+
+        return versoes
+            .Where(v => Contem(v.NumeroVersao, Busca))
+            .OrderByDescending(v => v.DataRelease);
+    }
+
+    private static bool Contem(string? texto, string busca)
+    {
+        if (string.IsNullOrWhiteSpace(busca))
+            return true;
+
+        return texto?.Contains(
+            busca,
+            StringComparison.OrdinalIgnoreCase) ?? false;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarAsync();
+    }
+
+    private async Task CarregarAsync()
+    {
+        Carregando = true;
+        Erro = null;
+
+        try
+        {
+            ListaSoftwares = await SoftwareApi.ListarAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(
+                $"Erro ao carregar softwares: {ex}");
+
+            Erro = "Não foi possível carregar os softwares. " +
+                   "Verifique se a API está disponível e tente novamente.";
+        }
+        finally
+        {
+            Carregando = false;
+        }
+    }
+}
