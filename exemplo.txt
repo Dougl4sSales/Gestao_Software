@@ -1,3 +1,5 @@
+Software
+
 {
   "nome": "Meu sistema",
   "descricao": "Sistema para gestão de versões",
@@ -8,4 +10,13 @@
       "depreciado": false
     }
   ]
+}
+
+Versoes
+
+{
+  "numeroVersao": "1.0.0",
+  "dataRelease": "2026-10-17T13:00:00",
+  "depreciado": false,
+  "softwareId": 1002
 }

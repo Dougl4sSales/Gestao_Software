@@ -12,14 +12,17 @@ public class SoftwareApiService
         _httpClient = httpClient;
     }
 
-    public async Task<List<SoftwareDto>> ListarAsync(
-        CancellationToken cancellationToken = default)
+    public async Task<List<SoftwareDto>> ListarAsync(CancellationToken cancellationToken = default)
     {
-        var softwares = await _httpClient.GetFromJsonAsync<List<SoftwareDto>>(
-            "api/softwares",
-            cancellationToken
-        );
+        var softwares = await _httpClient.GetFromJsonAsync<List<SoftwareDto>>("api/softwares", cancellationToken);
 
         return softwares ?? new List<SoftwareDto>();
     }
+    public async Task CriarAsync(SoftwareDto software, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.PostAsJsonAsync("api/softwares", software, cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+    }
+
 }

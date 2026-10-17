@@ -1,0 +1,235 @@
+
+@page "/softwares/novo"
+
+@using System.ComponentModel.DataAnnotations
+@using System.Net.Http
+@using System.Threading;
+@using GestaoDeSofware.Frontend.DTOs
+@using GestaoDeSofware.Frontend.Services
+
+@inject SoftwareApiService SoftwareApi
+@inject NavigationManager Navigation
+
+<PageTitle>Novo software</PageTitle>
+
+<div class="software-page">
+    <header class="page-header">
+        <div class="page-header-content">
+            <div class="page-icon">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div>
+                <h1>Novo software</h1>
+                <p>Cadastre um software e sua primeira versão.</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="software-content cadastro-container">
+        <EditForm Model="@Formulario" OnValidSubmit="@SalvarAsync">
+            <DataAnnotationsValidator />
+
+            <section class="cadastro-section">
+                <div class="cadastro-section-heading">
+                    <i class="bi bi-box"></i>
+                    <div>
+                        <h2>Dados do software</h2>
+                        <p>Informe os dados principais do software.</p>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label for="nome">Nome do software *</label>
+                    <InputText id="nome"
+                               class="form-control"
+                               @bind-Value="Formulario.Nome"
+                               maxlength="150"
+                               placeholder="Ex.: Sistema Financeiro" />
+                    <ValidationMessage For="@(() => Formulario.Nome)" />
+                </div>
+
+                <div class="form-field">
+                    <label for="descricao">Descrição</label>
+                    <InputTextArea id="descricao"
+                                   class="form-control"
+                                   @bind-Value="Formulario.Descricao"
+                                   maxlength="500"
+                                   rows="4"
+                                   placeholder="Descreva a finalidade do software..." />
+                    <ValidationMessage For="@(() => Formulario.Descricao)" />
+                    <small>Máximo de 500 caracteres.</small>
+                </div>
+            </section>
+
+            <section class="cadastro-section">
+                <div class="cadastro-section-heading">
+                    <i class="bi bi-tag"></i>
+                    <div>
+                        <h2>Primeira versão</h2>
+                        <p>Todo software será cadastrado com uma versão inicial.</p>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label for="numeroVersao">Número da versão *</label>
+                    <InputText id="numeroVersao"
+                               class="form-control"
+                               @bind-Value="Formulario.NumeroVersao"
+                               maxlength="50"
+                               placeholder="Ex.: 1.0.0" />
+                    <ValidationMessage For="@(() => Formulario.NumeroVersao)" />
+                </div>
+
+                <div class="form-field">
+                    <label for="dataRelease">Data de release *</label>
+                    <InputDate id="dataRelease"
+                               class="form-control"
+                               @bind-Value="Formulario.DataRelease"
+                               TValue="DateTime" />
+                    <ValidationMessage For="@(() => Formulario.DataRelease)" />
+                </div>
+
+                <div class="form-check cadastro-depreciado">
+                    <InputCheckbox id="depreciado"
+                                   class="form-check-input"
+                                   @bind-Value="Formulario.Depreciado" />
+                    <label class="form-check-label" for="depreciado">
+                        Esta versão já está depreciada
+                    </label>
+                </div>
+            </section>
+
+            @if (!string.IsNullOrWhiteSpace(Erro))
+            {
+                <div class="alert alert-danger" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    @Erro
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Sucesso))
+            {
+                <div class="alert alert-success" role="alert">
+                    <i class="bi bi-check-circle"></i>
+                    @Sucesso
+                </div>
+            }
+
+            <div class="cadastro-actions">
+                
+                <NavLink href="/softwares"
+                        class="btn-secondary-custom"
+                        aria-disabled="@Salvando">
+                    <i class="bi bi-arrow-left"></i>
+                    Voltar
+                </NavLink>
+
+
+                <button type="submit"
+                        class="btn-primary-custom"
+                        disabled="@Salvando">
+                    
+                        @if (Salvando)
+                        {
+                            <button type="button"
+                                    class="btn-secondary-custom"
+                                    disabled>
+                                <i class="bi bi-arrow-left"></i>
+                                Voltar
+                            </button>
+                        }
+                        else
+                        {
+                            <NavLink href="/softwares"
+                                    class="btn-secondary-custom">
+                                <i class="bi bi-arrow-left"></i>
+                                Voltar
+                            </NavLink>
+                        }
+
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private CadastroForm Formulario = new();
+
+    private bool Salvando;
+    private string? Erro;
+    private string? Sucesso;    
+
+    private async Task SalvarAsync()
+    {
+        Salvando = true;
+        Erro = null;
+
+        try
+        {
+            var software = new SoftwareDto
+            {
+                Nome = Formulario.Nome.Trim(),
+                Descricao = string.IsNullOrWhiteSpace(Formulario.Descricao)
+                    ? null
+                    : Formulario.Descricao.Trim(),
+
+                Versoes = new List<VersaoSoftwareDto>
+                {
+                    new()
+                    {
+                        NumeroVersao = Formulario.NumeroVersao.Trim(),
+                        DataRelease = Formulario.DataRelease,
+                        Depreciado = Formulario.Depreciado
+                    }
+                }
+            };
+
+            await SoftwareApi.CriarAsync(
+                software
+            );
+
+            Navigation.NavigateTo("/softwares");
+        }
+        catch (OperationCanceledException)
+        {
+            Erro = "O cadastro foi cancelado.";
+        }
+        catch (HttpRequestException ex)
+        {
+            Erro = $"Erro ao comunicar com a API: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            Erro = $"Não foi possível cadastrar o software: {ex.Message}";
+        }
+        finally
+        {            
+            Salvando = false;
+        }
+    }
+
+    @* private void Voltar()
+    {
+        Navigation.NavigateTo("/softwares");
+    } *@
+
+    private sealed class CadastroForm
+    {
+        [Required(ErrorMessage = "O nome do software é obrigatório.")]
+        [StringLength(150, ErrorMessage = "O nome deve ter no máximo 150 caracteres.")]
+        public string Nome { get; set; } = string.Empty;
+
+        [StringLength(500, ErrorMessage = "A descrição deve ter no máximo 500 caracteres.")]
+        public string? Descricao { get; set; }
+
+        [Required(ErrorMessage = "O número da versão é obrigatório.")]
+        [StringLength(50, ErrorMessage = "A versão deve ter no máximo 50 caracteres.")]
+        public string NumeroVersao { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "A data de release é obrigatória.")]
+        public DateTime DataRelease { get; set; } = DateTime.Today;
+
+        public bool Depreciado { get; set; }
+    }
+}

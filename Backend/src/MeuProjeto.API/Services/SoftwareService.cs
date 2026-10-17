@@ -14,7 +14,6 @@ public class SoftwareService : ISoftwareService
         _context = context;
     }
 
-    
     public async Task<IEnumerable<Software>> ListarTodosAsync()
     {
         var resultado = await (
@@ -32,10 +31,7 @@ public class SoftwareService : ISoftwareService
         ).ToListAsync();
 
         return resultado;
-    }
-
-
-    
+    }    
     public async Task<Software?> BuscarPorIdAsync(int id)
     {
         return await (
@@ -53,8 +49,6 @@ public class SoftwareService : ISoftwareService
             }
         ).FirstOrDefaultAsync();
     }
-
-
     public async Task<Software> CriarAsync(Software software)
     {
         software.Id = 0;

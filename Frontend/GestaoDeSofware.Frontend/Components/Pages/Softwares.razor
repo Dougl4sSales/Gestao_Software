@@ -2,162 +2,322 @@
 @page "/"
 @page "/softwares"
 
+@using System
 @using System.Linq
+@using System.Collections.Generic
 @using GestaoDeSofware.Frontend.DTOs
 @using GestaoDeSofware.Frontend.Services
+
 @inject SoftwareApiService SoftwareApi
+@inject NavigationManager Navigation
 
 <PageTitle>Gestão de Software</PageTitle>
 
 <div class="software-page">
+
     <header class="page-header">
-        <div>
-            <span class="eyebrow">ADMINISTRAÇÃO</span>
-            <h1>Gestão de Software</h1>
-            <p>Gerencie os softwares cadastrados e acompanhe suas versões.</p>
+        <div class="page-header-content">
+            <div class="page-icon">
+                <i class="bi bi-boxes"></i>
+            </div>
+
+            <div>
+                <h1>Gestão de Software</h1>
+                <p>Gerencie seus softwares e acompanhe suas versões.</p>
+            </div>
         </div>
+
+        @* <button type="button"
+                class="btn-primary-custom"
+                @onclick="NovoSoftware">
+            <i class="bi bi-plus-lg"></i>
+            Novo software
+        </button> *@
+
+    <NavLink href="/softwares/novo"
+            class="btn-primary-custom"
+            Match="NavLinkMatch.All">
+        <i class="bi bi-plus-lg"></i>
+        Novo software
+    </NavLink>
+
     </header>
 
-    <section class="stats-grid">
-        <div class="stat-card">
-            <span>Softwares cadastrados</span>
-            <strong>@ListaSoftwares.Count</strong>
+    @if (Carregando)
+    {
+        <div class="state-message">
+            <div class="loading-spinner"></div>
+            <p>Carregando softwares...</p>
         </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(Erro))
+    {
+        <div class="error-message">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span>@Erro</span>
 
-        <div class="stat-card">
-            <span>Total de versões</span>
-            <strong>@TotalVersoes</strong>
-        </div>
-
-        <div class="stat-card">
-            <span>Versões depreciadas</span>
-            <strong>@TotalDepreciadas</strong>
-        </div>
-    </section>
-
-    <section class="content-card">
-        <div class="toolbar">
-            <div>
-                <h2>Softwares e versões</h2>
-                <p>Consulte as versões e suas datas de release.</p>
-            </div>
-
-            <input
-                class="search-input"
-                type="search"
-                placeholder="Buscar software ou versão..."
-                @bind="Busca"
-                @bind:event="oninput"
-                aria-label="Buscar software ou versão" />
-        </div>
-
-        @if (Carregando)
-        {
-            <div class="feedback">
-                Carregando softwares...
-            </div>
-        }
-        else if (!string.IsNullOrWhiteSpace(Erro))
-        {
-            <div class="error-message">
-                <p>@Erro</p>
-
-                <button
-                    type="button"
-                    class="retry-button"
+            <button type="button"
+                    class="btn-secondary-custom"
                     @onclick="CarregarAsync">
-                    Tentar novamente
-                </button>
+                Tentar novamente
+            </button>
+        </div>
+    }
+    else
+    {
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-blue">
+                    <i class="bi bi-box"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Softwares cadastrados</span>
+                    <strong>@ListaSoftwares.Count</strong>
+                </div>
             </div>
-        }
-        else if (!SoftwaresFiltrados.Any())
-        {
-            <div class="feedback">
-                @if (ListaSoftwares.Count == 0)
-                {
-                    <p>Nenhum software cadastrado.</p>
-                }
-                else
-                {
-                    <p>Nenhum software encontrado para a pesquisa.</p>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="table-container">
-                <table class="software-table">
-                    <thead>
-                        <tr>
-                            <th>Software</th>
-                            <th>Versão</th>
-                            <th>Data de release</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
 
-                    <tbody>
-                        @foreach (var software in SoftwaresFiltrados)
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-purple">
+                    <i class="bi bi-collection"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Total de versões</span>
+                    <strong>@TotalVersoes</strong>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-orange">
+                    <i class="bi bi-archive"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Versões depreciadas</span>
+                    <strong>@TotalDepreciadas</strong>
+                </div>
+            </div>
+        </section>
+
+        <section class="software-content">
+            <div class="content-toolbar">
+                <div class="toolbar-title">
+                    <h2>Seus softwares</h2>
+                    <span class="results-count">
+                        @SoftwaresFiltrados.Count
+                        @(SoftwaresFiltrados.Count == 1
+                            ? "resultado"
+                            : "resultados")
+                    </span>
+                </div>
+
+                <div class="toolbar-actions">
+                    <div class="search-box">
+                        <i class="bi bi-search"></i>
+
+                        <input type="text"
+                               placeholder="Buscar software ou versão..."
+                               @bind="Busca"
+                               @bind:event="oninput" />
+
+                        @if (!string.IsNullOrWhiteSpace(Busca))
                         {
-                            var versoes = VersoesFiltradas(software).ToList();
-
-                            @foreach (var versao in versoes)
-                            {
-                                <tr @key="versao.Id">
-                                    <td>
-                                        <div class="software-name">
-                                            <span class="software-icon">
-                                                <i class="bi bi-box-seam"></i>
-                                            </span>
-
-                                            <div>
-                                                <strong>@software.Nome</strong>
-
-                                                @if (!string.IsNullOrWhiteSpace(software.Descricao))
-                                                {
-                                                    <small>@software.Descricao</small>
-                                                }
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <td>
-                                        <span class="version-number">
-                                            @versao.NumeroVersao
-                                        </span>
-                                    </td>
-
-                                    <td>
-                                        @versao.DataRelease.ToString("dd/MM/yyyy")
-                                    </td>
-
-                                    <td>
-                                        <span class="status-badge @(versao.Depreciado ? "deprecated" : "active")">
-                                            @(versao.Depreciado ? "Depreciada" : "Ativa")
-                                        </span>
-                                    </td>
-                                </tr>
-                            }
+                            <button type="button"
+                                    class="clear-search"
+                                    title="Limpar pesquisa"
+                                    @onclick="LimparBusca">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
                         }
-                    </tbody>
-                </table>
+                    </div>
+                </div>
             </div>
 
-            <div class="table-footer">
-                Exibindo @TotalLinhasExibidas
-                @(TotalLinhasExibidas == 1 ? "versão" : "versões")
-                de @TotalVersoes versões cadastradas.
-            </div>
-        }
-    </section>
+            @if (SoftwaresFiltrados.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-search"></i>
+                    </div>
+
+                    @if (ListaSoftwares.Count == 0)
+                    {
+                        <h3>Nenhum software cadastrado</h3>
+                        <p>Comece cadastrando seu primeiro software.</p>
+
+                        <button type="button"
+                                class="btn-primary-custom"
+                                @onclick="NovoSoftware">
+                            <i class="bi bi-plus-lg"></i>
+                            Cadastrar software
+                        </button>
+                    }
+                    else
+                    {
+                        <h3>Nenhum resultado encontrado</h3>
+                        <p>Tente pesquisar usando outro nome ou número de versão.</p>
+
+                        <button type="button"
+                                class="btn-secondary-custom"
+                                @onclick="LimparBusca">
+                            Limpar pesquisa
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="software-list">
+                    @foreach (var software in SoftwaresFiltrados)
+                    {
+                        var versoes = software.Versoes
+                            ?? new List<VersaoSoftwareDto>();
+
+                        <article class="software-card" @key="software.Id">
+
+                            <div class="software-card-header">
+                                <div class="software-card-toggle">
+
+                                    <div class="software-card-icon">
+                                        <i class="bi bi-box-seam"></i>
+                                    </div>
+
+                                    <div class="software-card-info">
+                                        <h3>@software.Nome</h3>
+
+                                        <p class="software-description">
+                                            @(string.IsNullOrWhiteSpace(software.Descricao)
+                                                ? "Nenhuma descrição informada."
+                                                : software.Descricao)
+                                        </p>
+
+                                        <div class="software-card-meta">
+                                            <span class="meta-badge">
+                                                <i class="bi bi-layers"></i>
+                                                @versoes.Count
+                                                @(versoes.Count == 1
+                                                    ? "versão"
+                                                    : "versões")
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="software-card-actions">
+                                    <button type="button"
+                                            class="btn-version"
+                                            title="Cadastrar nova versão"
+                                            @onclick="() => NovaVersao(software.Id)">
+                                        <i class="bi bi-plus-lg"></i>
+                                        <span>Nova versão</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="software-card-body">
+                                <div class="versions-heading">
+                                    <div>
+                                        <h4>Versões cadastradas</h4>
+                                        <p>Histórico de releases deste software.</p>
+                                    </div>
+                                </div>
+
+                                @if (versoes.Count == 0)
+                                {
+                                    <div class="versions-empty">
+                                        <i class="bi bi-inbox"></i>
+                                        <span>
+                                            Nenhuma versão cadastrada para este software.
+                                        </span>
+
+                                        <button type="button"
+                                                class="btn-version"
+                                                @onclick="() => NovaVersao(software.Id)">
+                                            <i class="bi bi-plus-lg"></i>
+                                            Cadastrar primeira versão
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="versions-list">
+                                        @foreach (var versao in versoes
+                                            .OrderByDescending(v => v.DataRelease))
+                                        {
+                                            <div class="version-item" @key="versao.Id">
+                                                <div class="version-icon">
+                                                    <i class="bi bi-tag"></i>
+                                                </div>
+
+                                                <div class="version-info">
+                                                    <strong>
+                                                        Versão @versao.NumeroVersao
+                                                    </strong>
+
+                                                    <span>
+                                                        <i class="bi bi-calendar3"></i>
+                                                        Release:
+                                                        @versao.DataRelease.ToString("dd/MM/yyyy")
+                                                    </span>
+                                                </div>
+
+                                                <div class="version-status">
+                                                    @if (versao.Depreciado)
+                                                    {
+                                                        <span class="status-badge status-deprecated">
+                                                            <i class="bi bi-exclamation-circle"></i>
+                                                            Depreciada
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="status-badge status-active">
+                                                            <i class="bi bi-check-circle"></i>
+                                                            Atualizada
+                                                        </span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    }
 </div>
 
 @code {
     private List<SoftwareDto> ListaSoftwares = new();
 
-    private string Busca = string.Empty;
-    private bool Carregando = true;
-    private string? Erro;
+    private string Busca { get; set; } = string.Empty;
+    private bool Carregando { get; set; } = true;
+    private string? Erro { get; set; }
+
+    private List<SoftwareDto> SoftwaresFiltrados
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Busca))
+                return ListaSoftwares;
+
+            var termo = Busca.Trim();
+
+            return ListaSoftwares
+                .Where(software =>
+                    (software.Nome?.Contains(
+                        termo, StringComparison.OrdinalIgnoreCase) ?? false)
+                    ||
+                    (software.Descricao?.Contains(
+                        termo, StringComparison.OrdinalIgnoreCase) ?? false)
+                    ||
+                    (software.Versoes?.Any(versao =>
+                        versao.NumeroVersao?.Contains(
+                            termo, StringComparison.OrdinalIgnoreCase) ?? false) ?? false))
+                .ToList();
+        }
+    }
 
     private int TotalVersoes =>
         ListaSoftwares.Sum(s => s.Versoes?.Count ?? 0);
@@ -165,44 +325,6 @@
     private int TotalDepreciadas =>
         ListaSoftwares.Sum(s =>
             s.Versoes?.Count(v => v.Depreciado) ?? 0);
-
-    private int TotalLinhasExibidas =>
-        SoftwaresFiltrados.Sum(s => VersoesFiltradas(s).Count());
-
-    private IEnumerable<SoftwareDto> SoftwaresFiltrados =>
-        ListaSoftwares.Where(s =>
-            Contem(s.Nome, Busca)
-            || Contem(s.Descricao, Busca)
-            || (s.Versoes?.Any(v =>
-                Contem(v.NumeroVersao, Busca)) ?? false));
-
-    private IEnumerable<VersaoSoftwareDto> VersoesFiltradas(
-        SoftwareDto software)
-    {
-        var versoes = software.Versoes
-            ?? new List<VersaoSoftwareDto>();
-
-        if (string.IsNullOrWhiteSpace(Busca)
-            || Contem(software.Nome, Busca)
-            || Contem(software.Descricao, Busca))
-        {
-            return versoes.OrderByDescending(v => v.DataRelease);
-        }
-
-        return versoes
-            .Where(v => Contem(v.NumeroVersao, Busca))
-            .OrderByDescending(v => v.DataRelease);
-    }
-
-    private static bool Contem(string? texto, string busca)
-    {
-        if (string.IsNullOrWhiteSpace(busca))
-            return true;
-
-        return texto?.Contains(
-            busca,
-            StringComparison.OrdinalIgnoreCase) ?? false;
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -216,19 +338,31 @@
 
         try
         {
-            ListaSoftwares = await SoftwareApi.ListarAsync();
+            var resultado = await SoftwareApi.ListarAsync();
+            ListaSoftwares = resultado?.ToList() ?? new List<SoftwareDto>();
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine(
-                $"Erro ao carregar softwares: {ex}");
-
-            Erro = "Não foi possível carregar os softwares. " +
-                   "Verifique se a API está disponível e tente novamente.";
+            Erro = $"Não foi possível carregar os softwares. Detalhes: {ex.Message}";
         }
         finally
         {
             Carregando = false;
         }
+    }
+
+    private void LimparBusca()
+    {
+        Busca = string.Empty;
+    }
+
+    private void NovoSoftware()
+    {
+        Navigation.NavigateTo("/softwares/novo");
+    }
+
+    private void NovaVersao(int softwareId)
+    {
+        Navigation.NavigateTo($"/softwares/{softwareId}/versoes/nova");
     }
 }
