@@ -14,8 +14,7 @@ public class VersaoSoftwareService : IVersaoSoftwareService
         _context = context;
     }
 
-    public async Task<IEnumerable<VersaoSoftware>>
-        ListarPorSoftwareAsync(int softwareId)
+    public async Task<IEnumerable<VersaoSoftware>>ListarPorSoftwareAsync(int softwareId)
     {
         return await _context.VersoesSoftware
             .AsNoTracking()
@@ -31,8 +30,7 @@ public class VersaoSoftwareService : IVersaoSoftwareService
             .FirstOrDefaultAsync(v => v.Id == id);
     }
 
-    public async Task<VersaoSoftware> CriarAsync(
-        VersaoSoftware versao)
+    public async Task<VersaoSoftware> CriarAsync(VersaoSoftware versao)
     {
         versao.Id = 0;
         versao.Software = null;
@@ -43,8 +41,7 @@ public class VersaoSoftwareService : IVersaoSoftwareService
         return versao;
     }
 
-    public async Task<bool> AtualizarAsync(
-        int id, VersaoSoftware versao)
+    public async Task<bool> AtualizarAsync(int id, VersaoSoftware versao)
     {
         var existente = await _context.VersoesSoftware
             .FindAsync(id);

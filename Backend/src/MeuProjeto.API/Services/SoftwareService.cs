@@ -14,19 +14,46 @@ public class SoftwareService : ISoftwareService
         _context = context;
     }
 
+    
     public async Task<IEnumerable<Software>> ListarTodosAsync()
     {
-        return await _context.Softwares
-            .AsNoTracking()
-            .ToListAsync();
+        var resultado = await (
+            from software in _context.Softwares.AsNoTracking()
+            join versao in _context.VersoesSoftware.AsNoTracking()
+                on software.Id equals versao.SoftwareId into versoes
+            select new Software
+            {
+                Id = software.Id,
+                Nome = software.Nome,
+                Descricao = software.Descricao,
+                DataCadastro = software.DataCadastro,
+                Versoes = versoes.ToList()
+            }
+        ).ToListAsync();
+
+        return resultado;
     }
 
+
+    
     public async Task<Software?> BuscarPorIdAsync(int id)
     {
-        return await _context.Softwares
-            .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == id);
+        return await (
+            from software in _context.Softwares.AsNoTracking()
+            where software.Id == id
+            join versao in _context.VersoesSoftware.AsNoTracking()
+                on software.Id equals versao.SoftwareId into versoes
+            select new Software
+            {
+                Id = software.Id,
+                Nome = software.Nome,
+                Descricao = software.Descricao,
+                DataCadastro = software.DataCadastro,
+                Versoes = versoes.ToList()
+            }
+        ).FirstOrDefaultAsync();
     }
+
 
     public async Task<Software> CriarAsync(Software software)
     {
@@ -39,8 +66,7 @@ public class SoftwareService : ISoftwareService
         return software;
     }
 
-    public async Task<bool> AtualizarAsync(
-        int id, Software software)
+    public async Task<bool> AtualizarAsync(int id, Software software)
     {
         var existente = await _context.Softwares
             .FindAsync(id);
