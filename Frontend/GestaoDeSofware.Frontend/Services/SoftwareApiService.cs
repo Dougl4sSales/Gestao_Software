@@ -69,4 +69,20 @@ public class SoftwareApiService
 
         response.EnsureSuccessStatusCode();
     }
+    //EXCLUIR SOFTWARE
+    public async Task ExcluirAsync(int id)
+    {
+        var response = await _httpClient.DeleteAsync($"api/softwares/{id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var erro = await response.Content.ReadAsStringAsync();
+
+            throw new HttpRequestException(
+                $"Erro ao excluir software. " +
+                $"Status: {(int)response.StatusCode} ({response.StatusCode}). " +
+                $"Detalhes: {erro}"
+            );
+        }
+    }
 }

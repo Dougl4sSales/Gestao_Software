@@ -1,4 +1,3 @@
-
 @page "/"
 @page "/softwares"
 
@@ -7,7 +6,6 @@
 @using System.Collections.Generic
 @using GestaoDeSofware.Frontend.DTOs
 @using GestaoDeSofware.Frontend.Services
-@using Microsoft.AspNetCore.Components
 
 @inject SoftwareApiService SoftwareApi
 
@@ -15,249 +13,302 @@
 
 <div class="software-page">
 
-    <header class="page-header">
-        <div class="page-header-content">
-            <div class="page-icon">
-                <i class="bi bi-boxes"></i>
-            </div>
-
-            <div>
-                <h1>Gestão de Software</h1>
-                <p>Gerencie seus softwares e acompanhe suas versões.</p>
-            </div>
+    <header class="software-header">
+        <div>
+            <h1>
+                <i class="bi bi-boxes me-2"></i>
+                Gestão de Software
+            </h1>
+            <p>Gerencie seus softwares e acompanhe suas versões.</p>
         </div>
 
-        <NavLink href="/softwares/novo"
-                 class="btn-primary-custom">
-            <i class="bi bi-plus-lg"></i>
+        <NavLink href="/softwares/novo" class="btn-primary-custom">
+            <i class="bi bi-plus-lg me-2"></i>
             Novo software
         </NavLink>
     </header>
 
-    @if (Carregando)
+    @if (!string.IsNullOrWhiteSpace(Mensagem))
     {
-        <div class="state-message">
-            <div class="loading-spinner"></div>
-            <p>Carregando softwares...</p>
+        <div class="alert alert-success alert-dismissible" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            @Mensagem
+            <button type="button"
+                    class="btn-close"
+                    aria-label="Fechar"
+                    @onclick="LimparMensagem">
+            </button>
         </div>
     }
-    else if (!string.IsNullOrWhiteSpace(Erro))
+
+    @if (!string.IsNullOrWhiteSpace(Erro))
     {
-        <div class="error-message">
-            <i class="bi bi-exclamation-triangle"></i>
-            <span>@Erro</span>
+        <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            @Erro
 
             <button type="button"
-                    class="btn-secondary-custom"
+                    class="btn btn-outline-danger btn-sm ms-2"
                     @onclick="CarregarAsync">
                 Tentar novamente
             </button>
         </div>
     }
-    else
-    {
-        <section class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon stat-icon-blue">
-                    <i class="bi bi-box"></i>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-label">Softwares cadastrados</span>
-                    <strong>@ListaSoftwares.Count</strong>
-                </div>
+
+    <section class="software-stats">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="bi bi-box"></i>
+            </div>
+            <div>
+                <span class="stat-label">Softwares cadastrados</span>
+                <strong>@ListaSoftwares.Count</strong>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="bi bi-layers"></i>
+            </div>
+            <div>
+                <span class="stat-label">Versões cadastradas</span>
+                <strong>@TotalVersoes</strong>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="bi bi-archive"></i>
+            </div>
+            <div>
+                <span class="stat-label">Versões depreciadas</span>
+                <strong>@TotalDepreciadas</strong>
+            </div>
+        </div>
+    </section>
+
+    <section class="software-content">
+
+        <div class="software-toolbar">
+            <div>
+                <h2>Meus softwares</h2>
+                <p>Consulte os sistemas e suas respectivas versões.</p>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-icon stat-icon-purple">
-                    <i class="bi bi-collection"></i>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-label">Total de versões</span>
-                    <strong>@TotalVersoes</strong>
-                </div>
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text"
+                       placeholder="Buscar software ou versão..."
+                       @bind="Busca"
+                       @bind:event="oninput" />
+
+                @if (!string.IsNullOrWhiteSpace(Busca))
+                {
+                    <button type="button"
+                            title="Limpar busca"
+                            aria-label="Limpar busca"
+                            @onclick="LimparBusca">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                }
             </div>
+        </div>
 
-            <div class="stat-card">
-                <div class="stat-icon stat-icon-orange">
-                    <i class="bi bi-archive"></i>
+        @if (Carregando)
+        {
+            <div class="loading-container">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
                 </div>
-                <div class="stat-info">
-                    <span class="stat-label">Versões depreciadas</span>
-                    <strong>@TotalDepreciadas</strong>
-                </div>
+                <p>Carregando softwares...</p>
             </div>
-        </section>
+        }
+        else if (SoftwaresFiltrados.Count == 0)
+        {
+            <div class="empty-state">
+                @if (ListaSoftwares.Count == 0)
+                {
+                    <i class="bi bi-inbox"></i>
+                    <h3>Nenhum software cadastrado</h3>
+                    <p>Cadastre seu primeiro software para começar.</p>
 
-        <section class="software-content">
-            <div class="content-toolbar">
-                <div class="toolbar-title">
-                    <h2>Seus softwares</h2>
-                    <span class="results-count">
-                        @SoftwaresFiltrados.Count
-                        @(SoftwaresFiltrados.Count == 1
-                            ? "resultado"
-                            : "resultados")
-                    </span>
-                </div>               
+                    <NavLink href="/softwares/novo" class="btn-primary-custom">
+                        <i class="bi bi-plus-lg me-2"></i>
+                        Cadastrar software
+                    </NavLink>
+                }
+                else
+                {
+                    <i class="bi bi-search"></i>
+                    <h3>Nenhum resultado encontrado</h3>
+                    <p>Tente pesquisar por outro nome ou número de versão.</p>
+
+                    <button type="button"
+                            class="btn-secondary-custom"
+                            @onclick="LimparBusca">
+                        Limpar busca
+                    </button>
+                }
             </div>
+        }
+        else
+        {
+            <div class="software-grid">
+                @foreach (var software in SoftwaresFiltrados)
+                {
+                    <article class="software-card" @key="software.Id">
 
-            @if (SoftwaresFiltrados.Count == 0)
-            {
-                <div class="empty-state">
-                    <div class="empty-state-icon">
-                        <i class="bi bi-search"></i>
-                    </div>
-
-                    @if (ListaSoftwares.Count == 0)
-                    {
-                        <h3>Nenhum software cadastrado</h3>
-                        <p>Comece cadastrando seu primeiro software.</p>
-
-                        <NavLink href="/softwares/novo"
-                                 class="btn-primary-custom">
-                            <i class="bi bi-plus-lg"></i>
-                            Cadastrar software
-                        </NavLink>
-                    }
-                    else
-                    {
-                        <h3>Nenhum resultado encontrado</h3>
-                        <p>Tente pesquisar usando outro nome ou número de versão.</p>
-
-                        <button type="button"
-                                class="btn-secondary-custom"
-                                @onclick="LimparBusca">
-                            Limpar pesquisa
-                        </button>
-                    }
-                </div>
-            }
-            else
-            {
-                <div class="software-list">
-                    @foreach (var software in SoftwaresFiltrados)
-                    {
-                        var versoes = software.Versoes
-                            ?? new List<VersaoSoftwareDto>();
-
-                        <article class="software-card" @key="software.Id">
-
-                            <div class="software-card-header">
-                                <div class="software-card-toggle">
-                                    <div class="software-card-icon">
-                                        <i class="bi bi-box-seam"></i>
-                                    </div>
-
-                                    <div class="software-card-info">
-                                        <h3>@software.Nome</h3>
-
-                                        <p class="software-description">
-                                            @(string.IsNullOrWhiteSpace(software.Descricao)
-                                                ? "Nenhuma descrição informada."
-                                                : software.Descricao)
-                                        </p>
-
-                                        <div class="software-card-meta">
-                                            <span class="meta-badge">
-                                                <i class="bi bi-layers"></i>
-                                                @versoes.Count
-                                                @(versoes.Count == 1
-                                                    ? "versão"
-                                                    : "versões")
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="software-card-actions">
-                                    <NavLink href="@($"/softwares/{software.Id}/versoes/nova")"
-                                             class="btn-version">
-                                        <i class="bi bi-plus-lg"></i>
-                                        <span>Nova versão</span>
-                                    </NavLink>
-                                </div>
+                        <div class="software-card-header">
+                            <div class="software-card-icon">
+                                <i class="bi bi-box-seam"></i>
                             </div>
 
-                            <div class="software-card-body">
-                                <div class="versions-heading">
-                                    <div>
-                                        <h4>Versões cadastradas</h4>
-                                        <p>Histórico de releases deste software.</p>
-                                    </div>
-                                </div>
+                            <div class="software-card-title">
+                                <h3>@software.Nome</h3>
 
-                                @if (versoes.Count == 0)
+                                @if (!string.IsNullOrWhiteSpace(software.Descricao))
                                 {
-                                    <div class="versions-empty">
-                                        <i class="bi bi-inbox"></i>
-                                        <span>
-                                            Nenhuma versão cadastrada para este software.
-                                        </span>
-
-                                        <NavLink href="@($"/softwares/{software.Id}/versoes/nova")"
-                                                 class="btn-version">
-                                            <i class="bi bi-plus-lg"></i>
-                                            Cadastrar primeira versão
-                                        </NavLink>
-                                    </div>
+                                    <p>@software.Descricao</p>
                                 }
                                 else
                                 {
-                                    <div class="versions-list">
-                                        @foreach (var versao in versoes.OrderByDescending(v => v.DataRelease))
-                                        {
-                                            <div class="version-item" @key="versao.Id">
-                                                <div class="version-icon">
-                                                    <i class="bi bi-tag"></i>
-                                                </div>
-
-                                                <div class="version-info">
-                                                    <strong>
-                                                        Versão @versao.NumeroVersao
-                                                    </strong>
-
-                                                    <span>
-                                                        <i class="bi bi-calendar3"></i>
-                                                        Release:
-                                                        @versao.DataRelease.ToString("dd/MM/yyyy")
-                                                    </span>
-                                                </div>
-
-                                                <div class="version-status">
-                                                    @if (versao.Depreciado)
-                                                    {
-                                                        <span class="status-badge status-deprecated">
-                                                            <i class="bi bi-exclamation-circle"></i>
-                                                            Depreciada
-                                                        </span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="status-badge status-active">
-                                                            <i class="bi bi-check-circle"></i>
-                                                            Ativa
-                                                        </span>
-                                                    }
-                                                </div>
-
-                                                <div class="version-actions">
-                                                    <NavLink href="@($"/softwares/{software.Id}/versoes/{versao.Id}/editar")"
-                                                             class="btn btn-sm btn-outline-secondary">
-                                                        <i class="bi bi-pencil"></i>
-                                                        Editar
-                                                    </NavLink>
-                                                </div>
-                                            </div>
-                                        }
-                                    </div>
+                                    <p class="text-muted">Sem descrição cadastrada.</p>
                                 }
                             </div>
-                        </article>
-                    }
-                </div>
-            }
-        </section>
-    }
+                        </div>
+
+                        <div class="software-card-body">
+                            <div class="versions-heading">
+                                <h4>
+                                    <i class="bi bi-layers me-2"></i>
+                                    Versões
+                                </h4>
+
+                                <span class="version-count">
+                                    @(software.Versoes?.Count ?? 0)
+                                </span>
+                            </div>
+
+                            @if (software.Versoes is { Count: > 0 })
+                            {
+                                <div class="version-list">
+                                    @foreach (var versao in software.Versoes
+                                        .OrderByDescending(v => v.DataRelease))
+                                    {
+                                        <div class="version-item" @key="versao.Id">
+                                            <div class="version-info">
+                                                <strong>
+                                                    <i class="bi bi-tag me-1"></i>
+                                                    @versao.NumeroVersao
+                                                </strong>
+
+                                                <small>
+                                                    <i class="bi bi-calendar3 me-1"></i>
+                                                    @versao.DataRelease.ToString("dd/MM/yyyy")
+                                                </small>
+                                            </div>
+
+                                            <div class="version-actions">
+                                                @if (versao.Depreciado)
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        Depreciada
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success">
+                                                        Ativa
+                                                    </span>
+                                                }
+
+                                                <NavLink
+                                                    href="@($"/softwares/{software.Id}/versoes/{versao.Id}/editar")"
+                                                    class="btn btn-sm btn-outline-secondary"
+                                                    title="Editar versão"
+                                                    aria-label="@($"Editar versão {versao.NumeroVersao}")">
+                                                    <i class="bi bi-pencil"></i>
+                                                </NavLink>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="no-versions">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Nenhuma versão cadastrada.
+                                </div>
+                            }
+                        </div>
+
+                        <div class="software-card-footer">
+                            <NavLink
+                                href="@($"/softwares/{software.Id}/versoes/nova")"
+                                class="btn-version">
+                                <i class="bi bi-plus-lg me-1"></i>
+                                Nova versão
+                            </NavLink>
+
+                            <button type="button"
+                                    class="btn-delete-software"
+                                    title="Excluir software"
+                                    aria-label="@($"Excluir software {software.Nome}")"
+                                    disabled="@(ExcluindoId.HasValue)"
+                                    @onclick="() => SolicitarExclusao(software.Id)">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </div>
+
+                        @if (SoftwareIdParaExcluir == software.Id)
+                        {
+                            <div class="delete-confirmation">
+                                <p>
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    Deseja excluir <strong>@software.Nome</strong>?
+                                </p>
+                                <small>
+                                    Essa operação não poderá ser desfeita.
+                                </small>
+
+                                <div class="delete-confirmation-actions">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-secondary"
+                                            disabled="@ExcluindoId.HasValue"
+                                            @onclick="CancelarExclusao">
+                                        Cancelar
+                                    </button>
+
+                                    <button type="button"
+                                            class="btn btn-sm btn-danger"
+                                            disabled="@ExcluindoId.HasValue"
+                                            @onclick="() => ExcluirAsync(software.Id)">
+                                        @if (ExcluindoId == software.Id)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1"
+                                                role="status"></span>
+                                            <span>Excluindo...</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-trash me-1"></i>
+                                            <span>Confirmar exclusão</span>
+}
+                                    </button>
+                                </div>
+                            </div>
+                        }
+
+                    </article>
+                }
+            </div>
+
+            <div class="results-footer">
+                Exibindo @SoftwaresFiltrados.Count de @ListaSoftwares.Count software(s).
+            </div>
+        }
+    </section>
 </div>
 
 @code {
@@ -265,7 +316,12 @@
 
     private string Busca { get; set; } = string.Empty;
     private bool Carregando { get; set; } = true;
+
     private string? Erro { get; set; }
+    private string? Mensagem { get; set; }
+
+    private int? SoftwareIdParaExcluir { get; set; }
+    private int? ExcluindoId { get; set; }
 
     private List<SoftwareDto> SoftwaresFiltrados
     {
@@ -315,7 +371,7 @@
         }
         catch (Exception ex)
         {
-            Erro = $"Não foi possível carregar os softwares. Detalhes: {ex.Message}";
+            Erro = $"Não foi possível carregar os softwares: {ex.Message}";
         }
         finally
         {
@@ -323,8 +379,53 @@
         }
     }
 
+    private void SolicitarExclusao(int softwareId)
+    {
+        Erro = null;
+        Mensagem = null;
+        SoftwareIdParaExcluir = softwareId;
+    }
+
+    private void CancelarExclusao()
+    {
+        if (!ExcluindoId.HasValue)
+            SoftwareIdParaExcluir = null;
+    }
+
+    private async Task ExcluirAsync(int softwareId)
+    {
+        if (ExcluindoId.HasValue)
+            return;
+
+        ExcluindoId = softwareId;
+        Erro = null;
+        Mensagem = null;
+
+        try
+        {
+            await SoftwareApi.ExcluirAsync(softwareId);
+
+            ListaSoftwares.RemoveAll(s => s.Id == softwareId);
+            SoftwareIdParaExcluir = null;
+            Mensagem = "Software excluído com sucesso.";
+        }
+        catch (Exception ex)
+        {
+            Erro = $"Não foi possível excluir o software: {ex.Message}";
+        }
+        finally
+        {
+            ExcluindoId = null;
+        }
+    }
+
     private void LimparBusca()
     {
         Busca = string.Empty;
+    }
+
+    private void LimparMensagem()
+    {
+        Mensagem = null;
     }
 }
