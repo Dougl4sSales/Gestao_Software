@@ -1,0 +1,271 @@
+
+@page "/softwares/{SoftwareId:int}/versoes/nova"
+@page "/softwares/{SoftwareId:int}/versoes/{VersaoId:int}/editar"
+
+@using System.ComponentModel.DataAnnotations
+@using GestaoDeSofware.Frontend.DTOs
+@using GestaoDeSofware.Frontend.Services
+
+@inject SoftwareApiService SoftwareApi
+@inject NavigationManager Navigation
+
+<PageTitle>@(Editando ? "Editar versão" : "Nova versão")</PageTitle>
+
+<div class="container py-4">
+    <div class="mb-4">
+        <button type="button"
+                class="btn btn-outline-secondary"
+                @onclick="Voltar"
+                disabled="@Salvando">
+            <i class="bi bi-arrow-left"></i>
+            Voltar
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="fs-2 text-primary">
+                    <i class="bi bi-boxes"></i>
+                </div>
+
+                <div>
+                    <h1 class="h3 mb-1">
+                        @(Editando ? "Editar versão" : "Nova versão")
+                    </h1>
+                    <p class="text-muted mb-0">
+                        @(Editando
+                            ? "Atualize os dados da versão do software."
+                            : "Cadastre uma nova versão para este software.")
+                    </p>
+                </div>
+            </div>
+
+            @if (Carregando)
+            {
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary"
+                         role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                    <p class="mt-2">Carregando dados...</p>
+                </div>
+            }
+            else
+            {
+                @if (!string.IsNullOrWhiteSpace(Erro))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        @Erro
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(NomeSoftware))
+                {
+                    <div class="alert alert-light border mb-4">
+                        <strong>Software:</strong> @NomeSoftware
+                    </div>
+                }
+
+                <EditForm Model="@Formulario"
+                          OnValidSubmit="@SalvarAsync"
+                          FormName="VersaoSoftwareForm">
+
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="text-danger mb-3" />
+
+                    <div class="mb-3">
+                        <label class="form-label" for="numeroVersao">
+                            Número da versão
+                        </label>
+
+                        <InputText id="numeroVersao"
+                                   class="form-control"
+                                   @bind-Value="Formulario.NumeroVersao"
+                                   placeholder="Ex.: 1.0.0"
+                                   disabled="@Salvando" />
+
+                        <ValidationMessage
+                            For="@(() => Formulario.NumeroVersao)"
+                            class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="dataRelease">
+                            Data de lançamento
+                        </label>
+
+                        <InputDate id="dataRelease"
+                                   class="form-control"
+                                   @bind-Value="Formulario.DataRelease"
+                                   disabled="@Salvando" />
+
+                        <ValidationMessage
+                            For="@(() => Formulario.DataRelease)"
+                            class="text-danger" />
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <InputCheckbox id="depreciado"
+                                       class="form-check-input"
+                                       @bind-Value="Formulario.Depreciado"
+                                       disabled="@Salvando" />
+
+                        <label class="form-check-label" for="depreciado">
+                            Versão depreciada
+                        </label>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                @onclick="Voltar"
+                                disabled="@Salvando">
+                            Cancelar
+                        </button>
+
+                        <button type="submit"
+                                class="btn btn-primary"
+                                disabled="@Salvando">
+                            @if (Salvando)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"
+                                      role="status"></span>
+                                <span>Salvando...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-check-lg me-1"></i>
+                                @(Editando ? "Salvar alterações" : "Cadastrar versão")
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int SoftwareId { get; set; }
+
+    [Parameter]
+    public int? VersaoId { get; set; }
+
+    private bool Carregando = true;
+    private bool Salvando;
+    private string? Erro;
+    private string? NomeSoftware;
+
+    private bool Editando => VersaoId.HasValue && VersaoId.Value > 0;
+
+    private FormularioVersao Formulario = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (SoftwareId <= 0)
+            {
+                Erro = "O identificador do software é inválido.";
+                return;
+            }
+
+            var software = await SoftwareApi.BuscarPorIdAsync(SoftwareId);
+            NomeSoftware = software.Nome;
+
+            if (Editando)
+            {
+                var versao = await SoftwareApi.BuscarVersaoAsync(VersaoId!.Value);
+
+                if (versao.SoftwareId != SoftwareId)
+                {
+                    Erro = "A versão não pertence ao software informado.";
+                    return;
+                }
+
+                Formulario = new FormularioVersao
+                {
+                    NumeroVersao = versao.NumeroVersao,
+                    DataRelease = versao.DataRelease,
+                    Depreciado = versao.Depreciado
+                };
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Erro = $"Não foi possível carregar os dados: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            Erro = $"Erro ao carregar a página: {ex.Message}";
+        }
+        finally
+        {
+            Carregando = false;
+        }
+    }
+
+    private async Task SalvarAsync()
+    {
+        if (Salvando)
+            return;
+
+        Salvando = true;
+        Erro = null;
+
+        try
+        {
+            var versao = new VersaoSoftwareDto
+            {
+                NumeroVersao = Formulario.NumeroVersao.Trim(),
+                DataRelease = Formulario.DataRelease,
+                Depreciado = Formulario.Depreciado,
+                SoftwareId = SoftwareId
+            };
+
+            if (Editando)
+            {
+                versao.Id = VersaoId!.Value;
+                await SoftwareApi.AtualizarVersaoAsync(versao);
+            }
+            else
+            {
+                await SoftwareApi.CriarVersaoAsync(versao);
+            }
+
+            Navigation.NavigateTo("/softwares");
+        }
+        catch (HttpRequestException ex)
+        {
+            Erro = $"Erro ao comunicar com a API: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            Erro = $"Erro inesperado: {ex.Message}";
+        }
+        finally
+        {
+            Salvando = false;
+        }
+    }
+
+    private void Voltar()
+    {
+        Navigation.NavigateTo("/softwares");
+    }
+
+    private class FormularioVersao
+    {
+        [Required(ErrorMessage = "Informe o número da versão.")]
+        [StringLength(50, ErrorMessage = "O número da versão deve ter no máximo 50 caracteres.")]
+        public string NumeroVersao { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Informe a data de lançamento.")]
+        public DateTime DataRelease { get; set; } = DateTime.Today;
+
+        public bool Depreciado { get; set; }
+    }
+}

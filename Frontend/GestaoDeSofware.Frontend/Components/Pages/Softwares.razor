@@ -7,9 +7,9 @@
 @using System.Collections.Generic
 @using GestaoDeSofware.Frontend.DTOs
 @using GestaoDeSofware.Frontend.Services
+@using Microsoft.AspNetCore.Components
 
 @inject SoftwareApiService SoftwareApi
-@inject NavigationManager Navigation
 
 <PageTitle>Gestão de Software</PageTitle>
 
@@ -27,20 +27,11 @@
             </div>
         </div>
 
-        @* <button type="button"
-                class="btn-primary-custom"
-                @onclick="NovoSoftware">
+        <NavLink href="/softwares/novo"
+                 class="btn-primary-custom">
             <i class="bi bi-plus-lg"></i>
             Novo software
-        </button> *@
-
-    <NavLink href="/softwares/novo"
-            class="btn-primary-custom"
-            Match="NavLinkMatch.All">
-        <i class="bi bi-plus-lg"></i>
-        Novo software
-    </NavLink>
-
+        </NavLink>
     </header>
 
     @if (Carregando)
@@ -107,28 +98,7 @@
                             ? "resultado"
                             : "resultados")
                     </span>
-                </div>
-
-                <div class="toolbar-actions">
-                    <div class="search-box">
-                        <i class="bi bi-search"></i>
-
-                        <input type="text"
-                               placeholder="Buscar software ou versão..."
-                               @bind="Busca"
-                               @bind:event="oninput" />
-
-                        @if (!string.IsNullOrWhiteSpace(Busca))
-                        {
-                            <button type="button"
-                                    class="clear-search"
-                                    title="Limpar pesquisa"
-                                    @onclick="LimparBusca">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
-                        }
-                    </div>
-                </div>
+                </div>               
             </div>
 
             @if (SoftwaresFiltrados.Count == 0)
@@ -143,12 +113,11 @@
                         <h3>Nenhum software cadastrado</h3>
                         <p>Comece cadastrando seu primeiro software.</p>
 
-                        <button type="button"
-                                class="btn-primary-custom"
-                                @onclick="NovoSoftware">
+                        <NavLink href="/softwares/novo"
+                                 class="btn-primary-custom">
                             <i class="bi bi-plus-lg"></i>
                             Cadastrar software
-                        </button>
+                        </NavLink>
                     }
                     else
                     {
@@ -175,7 +144,6 @@
 
                             <div class="software-card-header">
                                 <div class="software-card-toggle">
-
                                     <div class="software-card-icon">
                                         <i class="bi bi-box-seam"></i>
                                     </div>
@@ -202,13 +170,11 @@
                                 </div>
 
                                 <div class="software-card-actions">
-                                    <button type="button"
-                                            class="btn-version"
-                                            title="Cadastrar nova versão"
-                                            @onclick="() => NovaVersao(software.Id)">
+                                    <NavLink href="@($"/softwares/{software.Id}/versoes/nova")"
+                                             class="btn-version">
                                         <i class="bi bi-plus-lg"></i>
                                         <span>Nova versão</span>
-                                    </button>
+                                    </NavLink>
                                 </div>
                             </div>
 
@@ -228,19 +194,17 @@
                                             Nenhuma versão cadastrada para este software.
                                         </span>
 
-                                        <button type="button"
-                                                class="btn-version"
-                                                @onclick="() => NovaVersao(software.Id)">
+                                        <NavLink href="@($"/softwares/{software.Id}/versoes/nova")"
+                                                 class="btn-version">
                                             <i class="bi bi-plus-lg"></i>
                                             Cadastrar primeira versão
-                                        </button>
+                                        </NavLink>
                                     </div>
                                 }
                                 else
                                 {
                                     <div class="versions-list">
-                                        @foreach (var versao in versoes
-                                            .OrderByDescending(v => v.DataRelease))
+                                        @foreach (var versao in versoes.OrderByDescending(v => v.DataRelease))
                                         {
                                             <div class="version-item" @key="versao.Id">
                                                 <div class="version-icon">
@@ -271,9 +235,17 @@
                                                     {
                                                         <span class="status-badge status-active">
                                                             <i class="bi bi-check-circle"></i>
-                                                            Atualizada
+                                                            Ativa
                                                         </span>
                                                     }
+                                                </div>
+
+                                                <div class="version-actions">
+                                                    <NavLink href="@($"/softwares/{software.Id}/versoes/{versao.Id}/editar")"
+                                                             class="btn btn-sm btn-outline-secondary">
+                                                        <i class="bi bi-pencil"></i>
+                                                        Editar
+                                                    </NavLink>
                                                 </div>
                                             </div>
                                         }
@@ -354,15 +326,5 @@
     private void LimparBusca()
     {
         Busca = string.Empty;
-    }
-
-    private void NovoSoftware()
-    {
-        Navigation.NavigateTo("/softwares/novo");
-    }
-
-    private void NovaVersao(int softwareId)
-    {
-        Navigation.NavigateTo($"/softwares/{softwareId}/versoes/nova");
     }
 }
