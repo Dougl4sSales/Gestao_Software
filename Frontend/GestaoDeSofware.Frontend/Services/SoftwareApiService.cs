@@ -85,4 +85,20 @@ public class SoftwareApiService
             );
         }
     }
+
+    public async Task ExcluirVersaoAsync(int versaoId)
+    {
+        var response = await _httpClient.DeleteAsync(
+            $"api/versoes/{versaoId}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var erro = await response.Content.ReadAsStringAsync();
+
+            throw new HttpRequestException(
+                $"Erro ao excluir versão. " +
+                $"Status: {(int)response.StatusCode} ({response.StatusCode}). " +
+                $"Detalhes: {erro}");
+        }
+    }
 }

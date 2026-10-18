@@ -541,6 +541,128 @@
     min-height: 34px;
 }
 
+/* Contêiner individual de cada versão */
+.version-row-container {
+    width: 100%;
+}
+
+/* Botões de editar e excluir versão */
+.version-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.btn-icon-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.btn-edit-version {
+    color: #475569;
+}
+
+.btn-edit-version:hover {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #2563eb;
+}
+
+.btn-delete-version {
+    color: #dc2626;
+}
+
+.btn-delete-version:hover {
+    background: #fef2f2;
+    border-color: #fca5a5;
+}
+
+.btn-icon-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Confirmação da exclusão de uma versão */
+.delete-version-confirmation {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 8px 0 12px;
+    padding: 12px;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    background: #fef2f2;
+    font-size: 0.85rem;
+}
+
+.delete-version-message {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #991b1b;
+}
+
+.delete-version-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-confirm-delete-version,
+.btn-cancel-delete-version {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.btn-confirm-delete-version {
+    border: 1px solid #dc2626;
+    background: #dc2626;
+    color: #fff;
+}
+
+.btn-confirm-delete-version:hover {
+    background: #b91c1c;
+}
+
+.btn-cancel-delete-version {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #334155;
+}
+
+.btn-confirm-delete-version:disabled,
+.btn-cancel-delete-version:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+    .delete-version-confirmation {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .delete-version-actions {
+        width: 100%;
+    }
+}
 /* =========================
    Rodapé dos resultados
    ========================= */

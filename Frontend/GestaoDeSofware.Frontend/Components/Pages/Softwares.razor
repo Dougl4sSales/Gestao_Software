@@ -19,7 +19,7 @@
                 <i class="bi bi-boxes me-2"></i>
                 Gestão de Software
             </h1>
-            <p>Gerencie seus softwares e acompanhe suas versões.</p>
+            <p>Gerencie seus Softwares e acompanhe suas versões.</p>
         </div>
 
         <NavLink href="/softwares/novo" class="btn-primary-custom">
@@ -33,6 +33,7 @@
         <div class="alert alert-success alert-dismissible" role="alert">
             <i class="bi bi-check-circle me-2"></i>
             @Mensagem
+
             <button type="button"
                     class="btn-close"
                     aria-label="Fechar"
@@ -61,7 +62,7 @@
                 <i class="bi bi-box"></i>
             </div>
             <div>
-                <span class="stat-label">Softwares cadastrados</span>
+                <span class="stat-label">Softwares Cadastrados</span>
                 <strong>@ListaSoftwares.Count</strong>
             </div>
         </div>
@@ -71,7 +72,7 @@
                 <i class="bi bi-layers"></i>
             </div>
             <div>
-                <span class="stat-label">Versões cadastradas</span>
+                <span class="stat-label">Versões Cadastradas</span>
                 <strong>@TotalVersoes</strong>
             </div>
         </div>
@@ -81,7 +82,7 @@
                 <i class="bi bi-archive"></i>
             </div>
             <div>
-                <span class="stat-label">Versões depreciadas</span>
+                <span class="stat-label">Versões Depreciadas</span>
                 <strong>@TotalDepreciadas</strong>
             </div>
         </div>
@@ -97,6 +98,7 @@
 
             <div class="search-box">
                 <i class="bi bi-search"></i>
+
                 <input type="text"
                        placeholder="Buscar software ou versão..."
                        @bind="Busca"
@@ -154,6 +156,7 @@
         else
         {
             <div class="software-grid">
+
                 @foreach (var software in SoftwaresFiltrados)
                 {
                     <article class="software-card" @key="software.Id">
@@ -192,44 +195,101 @@
                             @if (software.Versoes is { Count: > 0 })
                             {
                                 <div class="version-list">
+
                                     @foreach (var versao in software.Versoes
                                         .OrderByDescending(v => v.DataRelease))
                                     {
-                                        <div class="version-item" @key="versao.Id">
-                                            <div class="version-info">
-                                                <strong>
-                                                    <i class="bi bi-tag me-1"></i>
-                                                    @versao.NumeroVersao
-                                                </strong>
+                                        <div class="version-row-container"
+                                             @key="versao.Id">
 
-                                                <small>
-                                                    <i class="bi bi-calendar3 me-1"></i>
-                                                    @versao.DataRelease.ToString("dd/MM/yyyy")
-                                                </small>
+                                            <div class="version-item">
+
+                                                <div class="version-info">
+                                                    <strong>
+                                                        <i class="bi bi-tag me-1"></i>
+                                                        @versao.NumeroVersao
+                                                    </strong>
+
+                                                    <small>
+                                                        <i class="bi bi-calendar3 me-1"></i>
+                                                        @versao.DataRelease.ToString("dd/MM/yyyy")
+                                                    </small>
+                                                </div>
+
+                                                <div class="version-actions">
+
+                                                    @if (versao.Depreciado)
+                                                    {
+                                                        <span class="badge bg-secondary">
+                                                            Depreciada
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-success">
+                                                            Ativa
+                                                        </span>
+                                                    }
+
+                                                    <NavLink
+                                                        href="@($"/softwares/{software.Id}/versoes/{versao.Id}/editar")"
+                                                        class="btn-icon-action btn-edit-version"
+                                                        title="Editar versão"
+                                                        aria-label="@($"Editar versão {versao.NumeroVersao}")">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </NavLink>
+
+                                                    <button type="button"
+                                                            class="btn-icon-action btn-delete-version"
+                                                            title="Excluir versão"
+                                                            aria-label="@($"Excluir versão {versao.NumeroVersao}")"
+                                                            disabled="@(ExcluindoVersaoId.HasValue || ExcluindoId.HasValue)"
+                                                            @onclick="() => SolicitarExclusaoVersao(versao.Id)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+
+                                                </div>
                                             </div>
 
-                                            <div class="version-actions">
-                                                @if (versao.Depreciado)
-                                                {
-                                                    <span class="badge bg-secondary">
-                                                        Depreciada
-                                                    </span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-success">
-                                                        Ativa
-                                                    </span>
-                                                }
+                                            @if (VersaoIdParaExcluir == versao.Id)
+                                            {
+                                                <div class="delete-version-confirmation">
+                                                    <div class="delete-version-message">
+                                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                                        <span>
+                                                            Excluir a versão
+                                                            <strong>@versao.NumeroVersao</strong>?
+                                                        </span>
+                                                    </div>
 
-                                                <NavLink
-                                                    href="@($"/softwares/{software.Id}/versoes/{versao.Id}/editar")"
-                                                    class="btn btn-sm btn-outline-secondary"
-                                                    title="Editar versão"
-                                                    aria-label="@($"Editar versão {versao.NumeroVersao}")">
-                                                    <i class="bi bi-pencil"></i>
-                                                </NavLink>
-                                            </div>
+                                                    <div class="delete-version-actions">
+                                                        <button type="button"
+                                                                class="btn-cancel-delete-version"
+                                                                disabled="@ExcluindoVersaoId.HasValue"
+                                                                @onclick="CancelarExclusaoVersao">
+                                                            Cancelar
+                                                        </button>
+
+                                                        <button type="button"
+                                                                class="btn-confirm-delete-version"
+                                                                disabled="@(ExcluindoVersaoId.HasValue || ExcluindoId.HasValue)"
+                                                                @onclick="() => ExcluirVersaoAsync(software.Id, versao.Id)">
+
+                                                            @if (ExcluindoVersaoId == versao.Id)
+                                                            {
+                                                                <span class="spinner-border spinner-border-sm me-1"
+                                                                      role="status"></span>
+                                                                <span>Excluindo...</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <i class="bi bi-trash me-1"></i>
+                                                                <span>Confirmar exclusão</span>
+                                                            }
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            }
                                         </div>
                                     }
                                 </div>
@@ -255,7 +315,7 @@
                                     class="btn-delete-software"
                                     title="Excluir software"
                                     aria-label="@($"Excluir software {software.Nome}")"
-                                    disabled="@(ExcluindoId.HasValue)"
+                                    disabled="@(ExcluindoId.HasValue || ExcluindoVersaoId.HasValue)"
                                     @onclick="() => SolicitarExclusao(software.Id)">
                                 <i class="bi bi-trash3"></i>
                             </button>
@@ -268,6 +328,7 @@
                                     <i class="bi bi-exclamation-triangle me-1"></i>
                                     Deseja excluir <strong>@software.Nome</strong>?
                                 </p>
+
                                 <small>
                                     Essa operação não poderá ser desfeita.
                                 </small>
@@ -287,14 +348,14 @@
                                         @if (ExcluindoId == software.Id)
                                         {
                                             <span class="spinner-border spinner-border-sm me-1"
-                                                role="status"></span>
+                                                  role="status"></span>
                                             <span>Excluindo...</span>
                                         }
                                         else
                                         {
                                             <i class="bi bi-trash me-1"></i>
                                             <span>Confirmar exclusão</span>
-}
+                                        }
                                     </button>
                                 </div>
                             </div>
@@ -322,6 +383,9 @@
 
     private int? SoftwareIdParaExcluir { get; set; }
     private int? ExcluindoId { get; set; }
+
+    private int? VersaoIdParaExcluir { get; set; }
+    private int? ExcluindoVersaoId { get; set; }
 
     private List<SoftwareDto> SoftwaresFiltrados
     {
@@ -383,6 +447,8 @@
     {
         Erro = null;
         Mensagem = null;
+
+        VersaoIdParaExcluir = null;
         SoftwareIdParaExcluir = softwareId;
     }
 
@@ -394,7 +460,7 @@
 
     private async Task ExcluirAsync(int softwareId)
     {
-        if (ExcluindoId.HasValue)
+        if (ExcluindoId.HasValue || ExcluindoVersaoId.HasValue)
             return;
 
         ExcluindoId = softwareId;
@@ -407,6 +473,7 @@
 
             ListaSoftwares.RemoveAll(s => s.Id == softwareId);
             SoftwareIdParaExcluir = null;
+
             Mensagem = "Software excluído com sucesso.";
         }
         catch (Exception ex)
@@ -416,6 +483,52 @@
         finally
         {
             ExcluindoId = null;
+        }
+    }
+
+    private void SolicitarExclusaoVersao(int versaoId)
+    {
+        Erro = null;
+        Mensagem = null;
+
+        SoftwareIdParaExcluir = null;
+        VersaoIdParaExcluir = versaoId;
+    }
+
+    private void CancelarExclusaoVersao()
+    {
+        if (!ExcluindoVersaoId.HasValue)
+            VersaoIdParaExcluir = null;
+    }
+
+    private async Task ExcluirVersaoAsync(int softwareId, int versaoId)
+    {
+        if (ExcluindoVersaoId.HasValue || ExcluindoId.HasValue)
+            return;
+
+        ExcluindoVersaoId = versaoId;
+        Erro = null;
+        Mensagem = null;
+
+        try
+        {
+            await SoftwareApi.ExcluirVersaoAsync(versaoId);
+
+            var software = ListaSoftwares
+                .FirstOrDefault(s => s.Id == softwareId);
+
+            software?.Versoes.RemoveAll(v => v.Id == versaoId);
+
+            VersaoIdParaExcluir = null;
+            Mensagem = "Versão excluída com sucesso.";
+        }
+        catch (Exception ex)
+        {
+            Erro = $"Não foi possível excluir a versão: {ex.Message}";
+        }
+        finally
+        {
+            ExcluindoVersaoId = null;
         }
     }
 
