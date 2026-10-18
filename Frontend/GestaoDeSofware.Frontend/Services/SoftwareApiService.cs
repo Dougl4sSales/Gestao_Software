@@ -1,3 +1,4 @@
+using System.Net.Http;
 using System.Net.Http.Json;
 using GestaoDeSofware.Frontend.DTOs;
 
@@ -18,11 +19,9 @@ public class SoftwareApiService
 
         return softwares ?? new List<SoftwareDto>();
     }
-    public async Task CriarAsync(SoftwareDto software, CancellationToken cancellationToken = default)
+    public async Task CriarAsync(SoftwareDto software)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/softwares", software, cancellationToken);
-
-        response.EnsureSuccessStatusCode();
+        var response = await _httpClient.PostAsJsonAsync("api/softwares", software);        
     }
 
 }

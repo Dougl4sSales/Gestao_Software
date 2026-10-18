@@ -37,12 +37,13 @@ public class SoftwaresController : ControllerBase
     public async Task<ActionResult<Software>> Criar(
         [FromBody] Software software)
     {
-        var criado = await _service.CriarAsync(software);
+        var criado = await _softwareService.CriarAsync(software);
 
         return CreatedAtAction(
             nameof(BuscarPorId),
             new { id = criado.Id },
-            criado);
+            criado
+        );
     }
 
     [HttpPut("{id:int}")]

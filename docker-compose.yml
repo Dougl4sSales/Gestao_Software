@@ -18,7 +18,11 @@ services:
     depends_on:
       sqlserver:
         condition: service_healthy
-    command: dotnet watch run --project src/MeuProjeto.API/MeuProjeto.API.csproj --urls http://+:8080
+    command: ["/app/src/MeuProjeto.API/bin/Debug/net10.0/MeuProjeto.API", "--urls", "http://+:8080"]
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
   
   
   frontend:

@@ -51,11 +51,26 @@ public class SoftwareService : ISoftwareService
     }
     public async Task<Software> CriarAsync(Software software)
     {
+        Console.WriteLine($"Nome recebido: {software.Nome}");
+        Console.WriteLine($"Quantidade de versões: {software.Versoes?.Count ?? 0}");
+
         software.Id = 0;
         software.DataCadastro = DateTime.UtcNow;
 
+        if (software.Versoes != null)
+        {
+            foreach (var versao in software.Versoes)
+            {
+                versao.Id = 0;
+                versao.SoftwareId = 0;
+                versao.Software = null;
+            }
+        }
+
         _context.Softwares.Add(software);
         await _context.SaveChangesAsync();
+
+        Console.WriteLine($"Software salvo com ID: {software.Id}");
 
         return software;
     }

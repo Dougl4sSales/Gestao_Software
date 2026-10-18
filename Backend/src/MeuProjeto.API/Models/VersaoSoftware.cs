@@ -15,5 +15,6 @@ public class VersaoSoftware
     // Chave estrangeira para o software.
     [Required]
     public int SoftwareId { get; set; }
+    [JsonIgnore]
     public Software? Software { get; set; }
 }

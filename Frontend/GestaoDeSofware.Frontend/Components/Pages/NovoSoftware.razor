@@ -1,9 +1,7 @@
-
 @page "/softwares/novo"
 
 @using System.ComponentModel.DataAnnotations
 @using System.Net.Http
-@using System.Threading;
 @using GestaoDeSofware.Frontend.DTOs
 @using GestaoDeSofware.Frontend.Services
 
@@ -18,6 +16,7 @@
             <div class="page-icon">
                 <i class="bi bi-box-seam"></i>
             </div>
+
             <div>
                 <h1>Novo software</h1>
                 <p>Cadastre um software e sua primeira versão.</p>
@@ -26,7 +25,10 @@
     </header>
 
     <div class="software-content cadastro-container">
-        <EditForm Model="@Formulario" OnValidSubmit="@SalvarAsync">
+        <EditForm Model="@Formulario"
+                  OnValidSubmit="@SalvarAsync"
+                  FormName="NovoSoftwareForm">
+
             <DataAnnotationsValidator />
 
             <section class="cadastro-section">
@@ -40,23 +42,28 @@
 
                 <div class="form-field">
                     <label for="nome">Nome do software *</label>
+
                     <InputText id="nome"
                                class="form-control"
                                @bind-Value="Formulario.Nome"
                                maxlength="150"
                                placeholder="Ex.: Sistema Financeiro" />
+
                     <ValidationMessage For="@(() => Formulario.Nome)" />
                 </div>
 
                 <div class="form-field">
                     <label for="descricao">Descrição</label>
+
                     <InputTextArea id="descricao"
                                    class="form-control"
                                    @bind-Value="Formulario.Descricao"
                                    maxlength="500"
                                    rows="4"
                                    placeholder="Descreva a finalidade do software..." />
+
                     <ValidationMessage For="@(() => Formulario.Descricao)" />
+
                     <small>Máximo de 500 caracteres.</small>
                 </div>
             </section>
@@ -72,20 +79,23 @@
 
                 <div class="form-field">
                     <label for="numeroVersao">Número da versão *</label>
+
                     <InputText id="numeroVersao"
                                class="form-control"
                                @bind-Value="Formulario.NumeroVersao"
                                maxlength="50"
                                placeholder="Ex.: 1.0.0" />
+
                     <ValidationMessage For="@(() => Formulario.NumeroVersao)" />
                 </div>
 
                 <div class="form-field">
                     <label for="dataRelease">Data de release *</label>
+
                     <InputDate id="dataRelease"
                                class="form-control"
-                               @bind-Value="Formulario.DataRelease"
-                               TValue="DateTime" />
+                               @bind-Value="Formulario.DataRelease" />
+
                     <ValidationMessage For="@(() => Formulario.DataRelease)" />
                 </div>
 
@@ -93,6 +103,7 @@
                     <InputCheckbox id="depreciado"
                                    class="form-check-input"
                                    @bind-Value="Formulario.Depreciado" />
+
                     <label class="form-check-label" for="depreciado">
                         Esta versão já está depreciada
                     </label>
@@ -107,46 +118,32 @@
                 </div>
             }
 
-            @if (!string.IsNullOrWhiteSpace(Sucesso))
-            {
-                <div class="alert alert-success" role="alert">
-                    <i class="bi bi-check-circle"></i>
-                    @Sucesso
-                </div>
-            }
-
             <div class="cadastro-actions">
-                
-                <NavLink href="/softwares"
+                <button type="button"
                         class="btn-secondary-custom"
-                        aria-disabled="@Salvando">
+                        disabled="@Salvando"
+                        @onclick="Voltar">
                     <i class="bi bi-arrow-left"></i>
                     Voltar
-                </NavLink>
-
+                </button>
 
                 <button type="submit"
                         class="btn-primary-custom"
                         disabled="@Salvando">
-                    
-                        @if (Salvando)
-                        {
-                            <button type="button"
-                                    class="btn-secondary-custom"
-                                    disabled>
-                                <i class="bi bi-arrow-left"></i>
-                                Voltar
-                            </button>
-                        }
-                        else
-                        {
-                            <NavLink href="/softwares"
-                                    class="btn-secondary-custom">
-                                <i class="bi bi-arrow-left"></i>
-                                Voltar
-                            </NavLink>
-                        }
-
+                    @if (Salvando)
+                    {
+                        <span>
+                            <i class="bi bi-hourglass-split"></i>
+                            Salvando...
+                        </span>
+                    }
+                    else
+                    {
+                        <span>
+                            <i class="bi bi-check-circle"></i>
+                            Salvar software
+                        </span>
+                    }
                 </button>
             </div>
         </EditForm>
@@ -158,18 +155,36 @@
 
     private bool Salvando;
     private string? Erro;
-    private string? Sucesso;    
 
     private async Task SalvarAsync()
     {
+        if (Salvando)
+            return;
+
         Salvando = true;
         Erro = null;
 
         try
         {
+            var nome = Formulario.Nome.Trim();
+            var numeroVersao = Formulario.NumeroVersao.Trim();
+
+            if (string.IsNullOrWhiteSpace(nome))
+            {
+                Erro = "Informe o nome do software.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(numeroVersao))
+            {
+                Erro = "Informe o número da versão.";
+                return;
+            }
+
             var software = new SoftwareDto
             {
-                Nome = Formulario.Nome.Trim(),
+                Nome = nome,
+
                 Descricao = string.IsNullOrWhiteSpace(Formulario.Descricao)
                     ? null
                     : Formulario.Descricao.Trim(),
@@ -178,41 +193,28 @@
                 {
                     new()
                     {
-                        NumeroVersao = Formulario.NumeroVersao.Trim(),
+                        NumeroVersao = numeroVersao,
                         DataRelease = Formulario.DataRelease,
                         Depreciado = Formulario.Depreciado
                     }
                 }
             };
 
-            await SoftwareApi.CriarAsync(
-                software
-            );
-
-            Navigation.NavigateTo("/softwares");
-        }
-        catch (OperationCanceledException)
-        {
-            Erro = "O cadastro foi cancelado.";
-        }
-        catch (HttpRequestException ex)
-        {
-            Erro = $"Erro ao comunicar com a API: {ex.Message}";
-        }
-        catch (Exception ex)
-        {
-            Erro = $"Não foi possível cadastrar o software: {ex.Message}";
-        }
+            await SoftwareApi.CriarAsync(software);
+            Salvando = false;
+            // Retorna à página principal somente após o POST ter sucesso.
+            Navigation.NavigateTo("/softwares", replace: true);
+        }    
         finally
-        {            
+        {
             Salvando = false;
         }
     }
 
-    @* private void Voltar()
+    private void Voltar()
     {
         Navigation.NavigateTo("/softwares");
-    } *@
+    }
 
     private sealed class CadastroForm
     {
